@@ -1,0 +1,11 @@
+# Copy this block into backend.tf in an environment-specific working
+# directory. Do not commit backend.tf or Terraform state.
+terraform {
+  backend "s3" {
+    bucket         = "REPLACE_WITH_TERRAFORM_STATE_BUCKET"
+    key            = "customer-feedback/production/terraform.tfstate"
+    region         = "REPLACE_WITH_AWS_REGION"
+    dynamodb_table = "REPLACE_WITH_TERRAFORM_LOCK_TABLE"
+    encrypt        = true
+  }
+}

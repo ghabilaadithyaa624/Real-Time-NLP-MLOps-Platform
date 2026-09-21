@@ -1,0 +1,21 @@
+aws_region  = "eu-west-1"
+project_name = "customer-feedback"
+environment  = "production"
+
+# Keep the EKS API private when the release runner can reach the VPC through
+# a private runner, VPN, or another approved network path.
+cluster_endpoint_public_access = false
+
+# Set this only when using a tightly restricted, approved public endpoint.
+# cluster_endpoint_public_access_cidrs = ["203.0.113.10/32"]
+# cluster_admin_role_arn = "arn:aws:iam::123456789012:role/platform-admin"
+
+# Optional: supply an approved globally unique bucket name.
+# artifacts_bucket_name = "customer-feedback-mlflow-artifacts-prod"
+
+# For a pre-existing KMS key, set its ARN rather than creating a new key.
+# artifacts_kms_key_arn = "arn:aws:kms:eu-west-1:123456789012:key/00000000-0000-0000-0000-000000000000"
+
+# The database password is not configured here. RDS manages it in Secrets Manager.
+db_multi_az             = true
+db_backup_retention_days = 7

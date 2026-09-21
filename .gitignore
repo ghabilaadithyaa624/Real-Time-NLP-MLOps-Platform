@@ -32,6 +32,15 @@ loki-data/
 promtail-data/
 tempo-data/
 
+# Terraform local state and working directories
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+!terraform.tfvars.example
+backend.tf
+
 # OS/editor files
 .DS_Store
 .vscode/
