@@ -28,6 +28,8 @@ htmlcov/
 # Generated monitoring state
 prometheus-data/
 grafana-data/
+loki-data/
+promtail-data/
 
 # OS/editor files
 .DS_Store

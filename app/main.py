@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import logging
 import os
 import time
 import uuid
@@ -19,12 +18,17 @@ from app.monitoring.metrics import (
     record_model_loading_error,
     route_template,
 )
+from app.observability.logging import (
+    configure_logging,
+    log_model_event,
+    log_request_complete,
+)
 from app.routes.health import router as health_router
 from app.routes.metrics import router as metrics_router
 from app.routes.model import router as model_router
 from app.routes.predict import router as predict_router
 
-logger = logging.getLogger(__name__)
+logger = configure_logging()
 
 
 class RequestIDMiddleware(BaseHTTPMiddleware):
@@ -48,11 +52,23 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
                 time.perf_counter() - started,
             )
             raise
+        elapsed_seconds = time.perf_counter() - started
+        endpoint = route_template(request.scope)
         record_http_request(
             request.method,
-            route_template(request.scope),
+            endpoint,
             response.status_code,
-            time.perf_counter() - started,
+            elapsed_seconds,
+        )
+        log_request_complete(
+            logger,
+            request_id=request_id,
+            endpoint=endpoint,
+            status_code=response.status_code,
+            latency_ms=elapsed_seconds * 1000,
+            model_version=str(
+                getattr(getattr(request.app.state, "predictor", None), "model_version", "unknown")
+            ),
         )
         response.headers["X-Request-ID"] = request_id
         return response
@@ -60,6 +76,8 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
 
 def create_app(predictor: Any | None = None) -> FastAPI:
     """Create the API application with optional dependency injection for tests."""
+
+    configure_logging()
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -70,14 +88,27 @@ def create_app(predictor: Any | None = None) -> FastAPI:
                 loaded_predictor = TransformerPredictor.from_environment()
                 loaded_predictor.warmup()
                 app.state.predictor = loaded_predictor
-                logger.info("model loaded and warmed successfully")
+                log_model_event(
+                    logger,
+                    "model.load.success",
+                    event="model.load.success",
+                    model_source=str(getattr(loaded_predictor, "model_source", "unknown")),
+                    model_version=str(getattr(loaded_predictor, "model_version", "unknown")),
+                )
             except (PredictorNotReady, ValueError, OSError) as exc:
                 # Keep liveness available while readiness remains false. This
                 # lets Kubernetes replace/retry an unready pod explicitly.
                 app.state.predictor = None
                 app.state.model_load_error = str(exc)
-                record_model_loading_error(os.getenv("MODEL_SOURCE", "mlflow"))
-                logger.error("model load failed: %s", exc)
+                model_source = os.getenv("MODEL_SOURCE", "mlflow")
+                record_model_loading_error(model_source)
+                log_model_event(
+                    logger,
+                    "model.load.failure",
+                    event="model.load.failure",
+                    model_source=model_source,
+                    error_type=type(exc).__name__,
+                )
         yield
 
     app = FastAPI(
