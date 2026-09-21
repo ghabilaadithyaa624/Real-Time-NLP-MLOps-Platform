@@ -38,3 +38,10 @@ training:
 governance:
   metric: f1
   minimum_f1: 0.90
+
+mlflow:
+  # Keep local runs opt-in; production enables this through environment config.
+  enabled: false
+  tracking_uri: file:./mlruns
+  experiment_name: customer-feedback-classifier
+  registered_model_name: customer-feedback-classifier

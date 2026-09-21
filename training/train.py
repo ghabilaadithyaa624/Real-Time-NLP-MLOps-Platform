@@ -1,8 +1,8 @@
 """Fine-tune a configurable Hugging Face sequence classifier.
 
-MLflow logging and model registration are deliberately separate phases. This
-script creates a local, provenance-rich training summary that Phase 6 can log
-as MLflow parameters and artifacts.
+MLflow logging is optional for local runs and model registration remains a
+separate explicit command. The script always creates a local, provenance-rich
+training summary and can additionally log the run to MLflow.
 """
 
 from __future__ import annotations
@@ -93,6 +93,7 @@ def run_training(
     output_dir: str | Path | None = None,
     max_train_samples: int | None = None,
     max_eval_samples: int | None = None,
+    enable_mlflow: bool | None = None,
 ) -> dict[str, Any]:
     """Run fine-tuning and return a serializable training summary."""
 
@@ -178,6 +179,16 @@ def run_training(
         },
     }
     write_json(output_path / "training_summary.json", summary)
+
+    mlflow_enabled = config.mlflow.enabled if enable_mlflow is None else enable_mlflow
+    if mlflow_enabled:
+        from training.mlflow_tracking import log_training_run
+
+        summary["mlflow"] = log_training_run(config, summary, output_path)
+        # The first summary is logged as a run artifact; this second write keeps
+        # the local summary linked to the resulting MLflow run as well.
+        write_json(output_path / "training_summary.json", summary)
+
     return summary
 
 
@@ -187,6 +198,11 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--output-dir")
     parser.add_argument("--max-train-samples", type=int)
     parser.add_argument("--max-eval-samples", type=int)
+    parser.add_argument(
+        "--with-mlflow",
+        action="store_true",
+        help="enable MLflow tracking for this run",
+    )
     return parser.parse_args(argv)
 
 
@@ -198,6 +214,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         output_dir=args.output_dir,
         max_train_samples=args.max_train_samples,
         max_eval_samples=args.max_eval_samples,
+        enable_mlflow=True if args.with_mlflow else None,
     )
     print(summary)
     return 0

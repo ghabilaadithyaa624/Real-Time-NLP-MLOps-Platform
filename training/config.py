@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -101,12 +101,44 @@ class GovernanceSettings:
 
 
 @dataclass(frozen=True)
+class MLflowSettings:
+    enabled: bool = False
+    tracking_uri: str = "file:./mlruns"
+    experiment_name: str = "customer-feedback-classifier"
+    registered_model_name: str = "customer-feedback-classifier"
+
+    def validate(self) -> None:
+        if not self.tracking_uri.strip():
+            raise ValueError("mlflow.tracking_uri must not be empty")
+        if not self.experiment_name.strip():
+            raise ValueError("mlflow.experiment_name must not be empty")
+        if not self.registered_model_name.strip():
+            raise ValueError("mlflow.registered_model_name must not be empty")
+
+    @classmethod
+    def from_mapping(cls, values: Mapping[str, Any]) -> "MLflowSettings":
+        settings = cls(
+            enabled=bool(values.get("enabled", False)),
+            tracking_uri=str(values.get("tracking_uri", "file:./mlruns")),
+            experiment_name=str(
+                values.get("experiment_name", "customer-feedback-classifier")
+            ),
+            registered_model_name=str(
+                values.get("registered_model_name", "customer-feedback-classifier")
+            ),
+        )
+        settings.validate()
+        return settings
+
+
+@dataclass(frozen=True)
 class ExperimentConfig:
     dataset: DatasetConfig
     preprocessing: PreprocessingConfig
     model: ModelSettings
     training: TrainingSettings
     governance: GovernanceSettings
+    mlflow: MLflowSettings = field(default_factory=MLflowSettings)
 
     def validate(self) -> None:
         self.dataset.validate()
@@ -114,6 +146,7 @@ class ExperimentConfig:
         self.model.validate()
         self.training.validate()
         self.governance.validate()
+        self.mlflow.validate()
 
 
 def load_experiment_config(path: str | Path) -> ExperimentConfig:
@@ -143,6 +176,7 @@ def load_experiment_config(path: str | Path) -> ExperimentConfig:
         model=ModelSettings.from_mapping(section("model")),
         training=TrainingSettings.from_mapping(section("training")),
         governance=GovernanceSettings.from_mapping(section("governance")),
+        mlflow=MLflowSettings.from_mapping(section("mlflow")),
     )
     config.validate()
     return config

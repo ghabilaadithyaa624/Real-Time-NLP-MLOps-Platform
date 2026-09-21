@@ -105,4 +105,4 @@ The smoke-run option is for pipeline verification only. It must not be used as a
 
 ## MLflow boundary
 
-This phase writes local run summaries. MLflow tracking, artifact logging, model registration, and model promotion are intentionally implemented in later phases so each lifecycle boundary remains explicit.
+This phase always writes local run summaries. MLflow tracking can be enabled explicitly for a run; model registration and model promotion remain separate operations so each lifecycle boundary remains explicit.
