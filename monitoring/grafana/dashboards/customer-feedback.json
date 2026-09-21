@@ -125,6 +125,16 @@
       "targets": [{"expr": "sum(kube_pod_status_ready{namespace=\"$namespace\",pod=~\"$pod\",condition=\"true\"})", "legendFormat": "ready pods", "refId": "A"}],
       "title": "Ready pod count",
       "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "percent", "decimals": 1}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 32},
+      "id": 12,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi"}},
+      "targets": [{"expr": "100 * sum(rate(nlp_prediction_confidence_bucket{le=\"0.7\"}[5m])) / clamp_min(sum(rate(nlp_prediction_confidence_count[5m])), 1)", "legendFormat": "confidence <= 0.7", "refId": "A"}],
+      "title": "Low-confidence prediction share",
+      "type": "timeseries"
     }
   ],
   "refresh": "10s",

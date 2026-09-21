@@ -37,6 +37,7 @@ def test_grafana_dashboard_contains_required_panels_and_safe_queries():
         "Pod CPU usage",
         "Pod memory usage",
         "Ready pod count",
+        "Low-confidence prediction share",
     }
     assert required <= titles
     serialized = json.dumps(dashboard)

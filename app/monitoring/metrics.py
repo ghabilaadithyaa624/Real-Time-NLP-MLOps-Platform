@@ -38,6 +38,13 @@ NLP_PREDICTION_LATENCY = Histogram(
     registry=REGISTRY,
     buckets=(0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5),
 )
+NLP_PREDICTION_CONFIDENCE = Histogram(
+    "nlp_prediction_confidence",
+    "Confidence of successful NLP predictions",
+    ("model_version",),
+    registry=REGISTRY,
+    buckets=(0.0, 0.5, 0.7, 0.8, 0.9, 0.95, 0.99, 1.0),
+)
 MODEL_LOADING_ERRORS = Counter(
     "model_loading_errors_total",
     "Model loading failures",
@@ -89,6 +96,13 @@ def record_prediction_latency(model_version: str, elapsed_seconds: float) -> Non
     )
 
 
+def record_prediction_confidence(model_version: str, confidence: float) -> None:
+    bounded_confidence = min(max(float(confidence), 0.0), 1.0)
+    NLP_PREDICTION_CONFIDENCE.labels(model_version=str(model_version)).observe(
+        bounded_confidence
+    )
+
+
 def record_model_loading_error(model_source: str) -> None:
     bounded_source = model_source if model_source in {"local", "mlflow"} else "other"
     MODEL_LOADING_ERRORS.labels(model_source=bounded_source).inc()
@@ -103,6 +117,7 @@ __all__ = [
     "MODEL_LOADING_ERRORS",
     "NLP_PREDICTION_ERRORS",
     "NLP_PREDICTION_LATENCY",
+    "NLP_PREDICTION_CONFIDENCE",
     "NLP_PREDICTIONS",
     "REGISTRY",
     "HTTP_REQUESTS",
@@ -111,6 +126,7 @@ __all__ = [
     "record_model_loading_error",
     "record_prediction_error",
     "record_prediction_latency",
+    "record_prediction_confidence",
     "record_prediction_success",
     "render_metrics",
     "route_template",

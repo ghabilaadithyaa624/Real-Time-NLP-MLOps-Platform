@@ -9,6 +9,7 @@ from fastapi import APIRouter, HTTPException, Request, status
 
 from app.inference.predictor import PredictorNotReady
 from app.monitoring.metrics import (
+    record_prediction_confidence,
     record_prediction_error,
     record_prediction_latency,
     record_prediction_success,
@@ -71,6 +72,7 @@ def predict(payload: PredictionRequest, request: Request) -> PredictionResponse:
 
     elapsed_seconds = time.perf_counter() - started
     record_prediction_success(result.prediction, result.model_version)
+    record_prediction_confidence(result.model_version, result.confidence)
     record_prediction_latency(result.model_version, elapsed_seconds)
     return PredictionResponse(
         prediction=result.prediction,

@@ -3,6 +3,7 @@ from fastapi.testclient import TestClient
 from app.main import create_app
 from app.monitoring.metrics import (
     record_model_loading_error,
+    record_prediction_confidence,
     record_prediction_error,
     record_prediction_latency,
     record_prediction_success,
@@ -27,6 +28,7 @@ class MetricsPredictor:
 def test_prediction_and_http_metrics_are_exposed_without_high_cardinality_data():
     record_prediction_success("positive", "metrics-test")
     record_prediction_error("inference", "metrics-test")
+    record_prediction_confidence("metrics-test", 0.9)
     record_prediction_latency("metrics-test", 0.01)
     record_model_loading_error("mlflow")
 
@@ -45,6 +47,7 @@ def test_prediction_and_http_metrics_are_exposed_without_high_cardinality_data()
     assert "nlp_predictions_total" in body
     assert "nlp_prediction_errors_total" in body
     assert "nlp_prediction_latency_seconds" in body
+    assert "nlp_prediction_confidence" in body
     assert "model_loading_errors_total" in body
     assert "A unique customer message" not in body
     assert "request_id" not in body
