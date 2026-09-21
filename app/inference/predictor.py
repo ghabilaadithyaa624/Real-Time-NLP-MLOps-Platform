@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import inspect
-import json
-import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping
@@ -12,6 +10,7 @@ from typing import Any, Mapping
 import torch
 
 from app.inference.preprocessing import PreprocessingConfig, tokenize_batch
+from app.inference.settings import InferenceSettings
 from app.inference.tokenizer import load_tokenizer
 
 
@@ -41,13 +40,23 @@ class TransformerPredictor:
         label_names: Mapping[int, str] | None = None,
         device: str | None = None,
         model_source: str = "local",
+        warmup_text: str = "health check",
     ) -> None:
         preprocessing.validate()
+        max_positions = getattr(
+            getattr(model, "config", None), "max_position_embeddings", None
+        )
+        if max_positions is not None and preprocessing.max_length > int(max_positions):
+            raise PredictorNotReady(
+                "MAX_LENGTH exceeds the model max_position_embeddings: "
+                f"{preprocessing.max_length} > {max_positions}"
+            )
         self.model = model
         self.tokenizer = tokenizer
         self.preprocessing = preprocessing
         self.model_version = model_version
         self.model_source = model_source
+        self.warmup_text = warmup_text
         self.device = torch.device(device or ("cuda" if torch.cuda.is_available() else "cpu"))
         self.model.to(self.device)
         self.model.eval()
@@ -70,7 +79,10 @@ class TransformerPredictor:
         model_version: str = "local",
         label_names: Mapping[int, str] | None = None,
         model_revision: str | None = None,
+        device: str | None = None,
+        warmup_text: str = "health check",
     ) -> "TransformerPredictor":
+
         try:
             from transformers import AutoModelForSequenceClassification
         except ImportError as exc:  # pragma: no cover - environment dependent
@@ -90,7 +102,9 @@ class TransformerPredictor:
             preprocessing=preprocessing,
             model_version=model_version,
             label_names=label_names,
+            device=device,
             model_source="local",
+            warmup_text=warmup_text,
         )
 
     @classmethod
@@ -101,6 +115,8 @@ class TransformerPredictor:
         preprocessing: PreprocessingConfig,
         model_version: str = "production",
         label_names: Mapping[int, str] | None = None,
+        device: str | None = None,
+        warmup_text: str = "health check",
     ) -> "TransformerPredictor":
         if not model_uri.strip():
             raise PredictorNotReady("MLflow model URI must not be empty")
@@ -123,7 +139,9 @@ class TransformerPredictor:
             preprocessing=preprocessing,
             model_version=model_version,
             label_names=label_names,
+            device=device,
             model_source="mlflow",
+            warmup_text=warmup_text,
         )
 
     @classmethod
@@ -135,38 +153,47 @@ class TransformerPredictor:
     ) -> "TransformerPredictor":
         """Load the configured model; MLflow is the production default."""
 
-        source = os.getenv("MODEL_SOURCE", "mlflow").strip().lower()
-        model_version = os.getenv("MODEL_VERSION", "production")
-        preprocessing = preprocessing or PreprocessingConfig(
-            max_length=int(os.getenv("MAX_LENGTH", "128"))
-        )
-        label_names = label_names or _labels_from_environment()
+        try:
+            settings = InferenceSettings.from_environment()
+        except (TypeError, ValueError) as exc:
+            raise PredictorNotReady(str(exc)) from exc
 
-        if source == "local":
-            model_path = os.getenv("MODEL_PATH", "")
+        preprocessing = preprocessing or PreprocessingConfig(
+            max_length=settings.max_length
+        )
+        label_names = label_names or settings.label_names
+        device = None if settings.device == "auto" else settings.device
+
+        if settings.device == "cuda" and not torch.cuda.is_available():
+            raise PredictorNotReady("INFERENCE_DEVICE=cuda but CUDA is unavailable")
+
+        if settings.model_source == "local":
             return cls.from_local(
-                model_path,
+                settings.model_path or "",
                 preprocessing=preprocessing,
-                model_version=model_version,
+                model_version=settings.model_version,
                 label_names=label_names,
-                model_revision=os.getenv("MODEL_REVISION"),
+                model_revision=settings.model_revision,
+                device=device,
+                warmup_text=settings.warmup_text,
             )
-        if source == "mlflow":
-            model_uri = os.getenv(
-                "MLFLOW_MODEL_URI",
-                "models:/customer-feedback-classifier@production",
-            )
-            return cls.from_mlflow(
-                model_uri,
-                preprocessing=preprocessing,
-                model_version=model_version,
-                label_names=label_names,
-            )
-        raise PredictorNotReady(f"unsupported MODEL_SOURCE: {source}")
+        return cls.from_mlflow(
+            settings.mlflow_model_uri,
+            preprocessing=preprocessing,
+            model_version=settings.model_version,
+            label_names=label_names,
+            device=device,
+            warmup_text=settings.warmup_text,
+        )
 
     @property
     def is_ready(self) -> bool:
         return self.model is not None and self.tokenizer is not None
+
+    def warmup(self) -> None:
+        """Run one safe synthetic inference before declaring readiness."""
+
+        self.predict(self.warmup_text)
 
     def predict(self, text: str) -> PredictionResult:
         if not self.is_ready:
@@ -194,14 +221,3 @@ class TransformerPredictor:
             confidence=float(probabilities[class_index].item()),
             model_version=self.model_version,
         )
-
-
-def _labels_from_environment() -> dict[int, str] | None:
-    raw = os.getenv("MODEL_LABELS")
-    if not raw:
-        return None
-    try:
-        values = json.loads(raw)
-        return {int(index): str(label) for index, label in values.items()}
-    except (TypeError, ValueError, json.JSONDecodeError) as exc:
-        raise PredictorNotReady("MODEL_LABELS must be a JSON object") from exc

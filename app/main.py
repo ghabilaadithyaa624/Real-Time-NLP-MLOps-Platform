@@ -43,8 +43,10 @@ def create_app(predictor: Any | None = None) -> FastAPI:
             app.state.predictor = predictor
         else:
             try:
-                app.state.predictor = TransformerPredictor.from_environment()
-                logger.info("model loaded successfully")
+                loaded_predictor = TransformerPredictor.from_environment()
+                loaded_predictor.warmup()
+                app.state.predictor = loaded_predictor
+                logger.info("model loaded and warmed successfully")
             except (PredictorNotReady, ValueError, OSError) as exc:
                 # Keep liveness available while readiness remains false. This
                 # lets Kubernetes replace/retry an unready pod explicitly.
