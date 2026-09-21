@@ -16,3 +16,12 @@ fastapi==0.115.8
 uvicorn[standard]==0.34.0
 httpx==0.28.1
 prometheus-client==0.21.1
+
+# OpenTelemetry distributed tracing.
+opentelemetry-api==1.44.0
+opentelemetry-sdk==1.44.0
+opentelemetry-exporter-otlp-proto-grpc==1.44.0
+opentelemetry-instrumentation-fastapi==0.65b0
+# Keep MLflow's protobuf constraint compatible with OTLP dependencies.
+googleapis-common-protos==1.66.0
+protobuf==5.29.6

@@ -10,6 +10,10 @@ services:
       MODEL_VERSION: ${MODEL_VERSION:-local}
       MAX_LENGTH: ${MAX_LENGTH:-128}
       INFERENCE_DEVICE: ${INFERENCE_DEVICE:-cpu}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-real-time-nlp-api}
+      OTEL_TRACES_EXPORTER: ${OTEL_TRACES_EXPORTER:-none}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-grpc}
     volumes:
       # Supply a previously trained Hugging Face checkpoint locally. The
       # directory is read-only and is never copied into the image.
@@ -91,8 +95,33 @@ services:
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
+  tempo:
+    image: grafana/tempo:2.6.1
+    profiles: [observability]
+    command:
+      - -config.file=/etc/tempo/tempo.yml
+    volumes:
+      - ./monitoring/tempo/tempo.yml:/etc/tempo/tempo.yml:ro
+      - tempo-data:/var/tempo
+    ports:
+      - "${TEMPO_PORT:-3200}:3200"
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.115.1
+    profiles: [observability]
+    depends_on:
+      - tempo
+    command:
+      - --config=/etc/otelcol-contrib/otel-collector-config.yml
+    volumes:
+      - ./monitoring/otel-collector/otel-collector-config.yml:/etc/otelcol-contrib/otel-collector-config.yml:ro
+    ports:
+      - "${OTEL_GRPC_PORT:-4317}:4317"
+      - "${OTEL_HTTP_PORT:-4318}:4318"
+
 volumes:
   prometheus-data:
   grafana-data:
   loki-data:
   promtail-data:
+  tempo-data:
