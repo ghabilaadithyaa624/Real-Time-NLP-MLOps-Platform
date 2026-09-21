@@ -31,6 +31,8 @@ grafana-data/
 loki-data/
 promtail-data/
 tempo-data/
+postgres-data/
+minio-data/
 
 # Terraform local state and working directories
 .terraform/

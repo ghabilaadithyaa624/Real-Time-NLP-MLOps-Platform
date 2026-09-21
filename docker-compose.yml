@@ -5,8 +5,10 @@ services:
       dockerfile: Dockerfile
     image: real-time-nlp-api:local
     environment:
-      MODEL_SOURCE: local
+      MODEL_SOURCE: ${MODEL_SOURCE:-local}
       MODEL_PATH: /models/model
+      MLFLOW_MODEL_URI: ${MLFLOW_MODEL_URI:-models:/customer-feedback-classifier@production}
+      MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI:-http://mlflow:5000}
       MODEL_VERSION: ${MODEL_VERSION:-local}
       MAX_LENGTH: ${MAX_LENGTH:-128}
       INFERENCE_DEVICE: ${INFERENCE_DEVICE:-cpu}
@@ -39,6 +41,86 @@ services:
       timeout: 5s
       start_period: 60s
       retries: 3
+
+  postgres:
+    image: postgres:16.4-alpine
+    profiles: [mlflow]
+    environment:
+      POSTGRES_DB: ${MLFLOW_POSTGRES_DB:-mlflow}
+      POSTGRES_USER: ${MLFLOW_POSTGRES_USER:-mlflow}
+      POSTGRES_PASSWORD: ${MLFLOW_POSTGRES_PASSWORD:?Set MLFLOW_POSTGRES_PASSWORD before starting the MLflow profile}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio:RELEASE.2024-12-18T13-15-44Z
+    profiles: [mlflow]
+    command: server /data --console-address :9001
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER before starting the MLflow profile}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD before starting the MLflow profile}
+    volumes:
+      - minio-data:/data
+    ports:
+      - "${MINIO_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    healthcheck:
+      test: [CMD, curl, -f, http://localhost:9000/minio/health/live]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  mlflow-bucket-init:
+    image: minio/mc:RELEASE.2024-12-18T11-57-12Z
+    profiles: [mlflow]
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER before starting the MLflow profile}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD before starting the MLflow profile}
+      MLFLOW_S3_BUCKET: ${MLFLOW_S3_BUCKET:-mlflow-artifacts}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD" &&
+        mc mb --ignore-existing "local/$$MLFLOW_S3_BUCKET"
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.19.0
+    profiles: [mlflow]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mlflow-bucket-init:
+        condition: service_completed_successfully
+    environment:
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER before starting the MLflow profile}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD before starting the MLflow profile}
+      MLFLOW_S3_ENDPOINT_URL: http://minio:9000
+    command:
+      - mlflow
+      - server
+      - --host
+      - 0.0.0.0
+      - --port
+      - "5000"
+      - --backend-store-uri
+      - postgresql+psycopg2://${MLFLOW_POSTGRES_USER:-mlflow}:${MLFLOW_POSTGRES_PASSWORD:?Set MLFLOW_POSTGRES_PASSWORD before starting the MLflow profile}@postgres:5432/${MLFLOW_POSTGRES_DB:-mlflow}
+      - --default-artifact-root
+      - s3://${MLFLOW_S3_BUCKET:-mlflow-artifacts}/
+    ports:
+      - "${MLFLOW_PORT:-5000}:5000"
+    healthcheck:
+      test: [CMD, curl, -f, http://localhost:5000/]
+      interval: 15s
+      timeout: 5s
+      retries: 10
 
   prometheus:
     image: prom/prometheus:v2.53.5
@@ -120,6 +202,8 @@ services:
       - "${OTEL_HTTP_PORT:-4318}:4318"
 
 volumes:
+  postgres-data:
+  minio-data:
   prometheus-data:
   grafana-data:
   loki-data:

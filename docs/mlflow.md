@@ -32,6 +32,65 @@ mlflow:
 
 MLflow is opt-in for local training so a normal CPU training run does not silently require a tracking service. Production enables tracking through configuration or `MLFLOW_TRACKING_URI`.
 
+## Local PostgreSQL and S3-compatible profile
+
+For local integration testing of the production storage boundary, Compose
+provides an explicit `mlflow` profile:
+
+```text
+PostgreSQL 16       -> MLflow backend store and registry metadata
+MinIO                -> S3-compatible MLflow artifact store
+MLflow 2.19.0       -> tracking server and model registry API
+```
+
+Set runtime-only credentials and start the profile:
+
+```bash
+export MLFLOW_POSTGRES_PASSWORD='<local-password>'
+export MINIO_ROOT_USER='minio-local'
+export MINIO_ROOT_PASSWORD='<local-minio-password>'
+
+docker compose --profile mlflow up -d mlflow
+```
+
+The local endpoints are:
+
+```text
+MLflow:       http://localhost:5000
+MinIO API:    http://localhost:9000
+MinIO console: http://localhost:9001
+PostgreSQL:   internal Compose service `postgres:5432`
+```
+
+For training commands running on the host, point MLflow at the published
+server:
+
+```bash
+MLFLOW_TRACKING_URI=http://localhost:5000 \
+  .venv/bin/python -m training.train \
+    --config training/config.yaml \
+    --with-mlflow \
+    --output-dir artifacts/training
+```
+
+The Compose MLflow server uses a PostgreSQL URI for `--backend-store-uri`
+and an `s3://` default artifact root. The MinIO credentials are injected only
+at runtime. They are not stored in Compose files, YAML configuration, GitHub
+Actions, or Git.
+
+Stop the profile without deleting named data volumes:
+
+```bash
+docker compose --profile mlflow down
+```
+
+Delete local state only when intentionally resetting the integration
+environment:
+
+```bash
+docker compose --profile mlflow down --volumes
+```
+
 ## What is tracked
 
 The integration records:
