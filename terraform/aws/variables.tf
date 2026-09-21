@@ -142,6 +142,11 @@ variable "db_backup_retention_days" {
   description = "RDS automated backup retention period."
   type        = number
   default     = 7
+
+  validation {
+    condition     = var.db_backup_retention_days >= 1 && var.db_backup_retention_days <= 35
+    error_message = "db_backup_retention_days must be between 1 and 35 days."
+  }
 }
 
 variable "kubernetes_namespace" {

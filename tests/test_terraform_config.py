@@ -39,6 +39,8 @@ def test_eks_is_private_by_default_and_uses_workload_identity():
     }
     assert variable_map["cluster_endpoint_public_access"]["default"] is False
     assert "0.0.0.0/0" in variable_map["cluster_endpoint_public_access_cidrs"]["validation"][0]["condition"]
+    assert variable_map["db_backup_retention_days"]["default"] == 7
+    assert "between 1 and 35" in variable_map["db_backup_retention_days"]["validation"][0]["error_message"]
 
     eks = _load(TERRAFORM_ROOT / "eks.tf")["module"][0]["eks"]
     assert eks["enable_irsa"] is True
@@ -76,6 +78,8 @@ def test_artifacts_and_database_are_private_and_encrypted():
     assert database["storage_encrypted"] is True
     assert database["manage_master_user_password"] is True
     assert database["deletion_protection"] is True
+    assert database["preferred_backup_window"] == "03:00-04:00"
+    assert database["preferred_maintenance_window"] == "sun:04:00-sun:05:00"
 
 
 def test_waf_rate_limiting_and_common_rules_are_configured():

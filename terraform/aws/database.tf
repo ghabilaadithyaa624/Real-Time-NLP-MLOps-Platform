@@ -55,6 +55,8 @@ resource "aws_db_instance" "mlflow" {
 
   multi_az                  = var.db_multi_az
   backup_retention_period   = var.db_backup_retention_days
+  preferred_backup_window   = "03:00-04:00"
+  preferred_maintenance_window = "sun:04:00-sun:05:00"
   copy_tags_to_snapshot    = true
   deletion_protection      = true
   skip_final_snapshot      = false
