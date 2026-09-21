@@ -25,6 +25,10 @@ mlruns/
 coverage.xml
 htmlcov/
 
+# Generated monitoring state
+prometheus-data/
+grafana-data/
+
 # OS/editor files
 .DS_Store
 .vscode/
