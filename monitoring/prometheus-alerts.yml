@@ -1,0 +1,72 @@
+groups:
+  - name: customer-feedback-api
+    interval: 30s
+    rules:
+      - alert: CustomerFeedbackApiTargetDown
+        expr: up{job="real-time-nlp-api"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: real-time-nlp-api
+        annotations:
+          summary: Customer feedback API metrics target is down
+          description: Prometheus cannot scrape the API metrics endpoint.
+
+      - alert: CustomerFeedbackApiHttp5xxRateHigh
+        expr: >-
+          sum(rate(http_requests_total{job="real-time-nlp-api",status_class=~"5xx"}[5m]))
+          /
+          clamp_min(sum(rate(http_requests_total{job="real-time-nlp-api"}[5m])), 0.001)
+          > 0.05
+        for: 10m
+        labels:
+          severity: warning
+          service: real-time-nlp-api
+        annotations:
+          summary: Customer feedback API HTTP 5xx rate is high
+          description: More than five percent of API requests returned 5xx responses over the last ten minutes.
+
+      - alert: CustomerFeedbackApiPredictionErrorRateHigh
+        expr: >-
+          sum(rate(nlp_prediction_errors_total{job="real-time-nlp-api"}[5m]))
+          /
+          clamp_min(
+            sum(rate(nlp_prediction_errors_total{job="real-time-nlp-api"}[5m]))
+            + sum(rate(nlp_predictions_total{job="real-time-nlp-api"}[5m])),
+            0.001
+          )
+          > 0.01
+        for: 10m
+        labels:
+          severity: warning
+          service: real-time-nlp-api
+        annotations:
+          summary: Customer feedback prediction error rate is high
+          description: More than one percent of prediction attempts failed over the last ten minutes.
+
+      - alert: CustomerFeedbackApiPredictionLatencyHigh
+        expr: >-
+          histogram_quantile(
+            0.95,
+            sum by (le) (
+              rate(nlp_prediction_latency_seconds_bucket{job="real-time-nlp-api"}[5m])
+            )
+          )
+          > 0.5
+        for: 10m
+        labels:
+          severity: warning
+          service: real-time-nlp-api
+        annotations:
+          summary: Customer feedback prediction p95 latency is high
+          description: Prediction p95 latency has exceeded 500 milliseconds for ten minutes.
+
+      - alert: CustomerFeedbackApiModelLoadingFailure
+        expr: increase(model_loading_errors_total{job="real-time-nlp-api"}[15m]) > 0
+        for: 5m
+        labels:
+          severity: critical
+          service: real-time-nlp-api
+        annotations:
+          summary: Customer feedback model loading failed
+          description: A model-loading failure was observed in the last fifteen minutes; inspect readiness and structured logs.
