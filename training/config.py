@@ -80,17 +80,40 @@ class TrainingSettings:
 
 
 @dataclass(frozen=True)
+class GovernanceSettings:
+    metric: str = "f1"
+    minimum_f1: float = 0.90
+
+    def validate(self) -> None:
+        if self.metric != "f1":
+            raise ValueError("only f1 is supported as the current governance metric")
+        if not 0 <= self.minimum_f1 <= 1:
+            raise ValueError("governance.minimum_f1 must be between 0 and 1")
+
+    @classmethod
+    def from_mapping(cls, values: Mapping[str, Any]) -> "GovernanceSettings":
+        settings = cls(
+            metric=str(values.get("metric", "f1")),
+            minimum_f1=float(values.get("minimum_f1", 0.90)),
+        )
+        settings.validate()
+        return settings
+
+
+@dataclass(frozen=True)
 class ExperimentConfig:
     dataset: DatasetConfig
     preprocessing: PreprocessingConfig
     model: ModelSettings
     training: TrainingSettings
+    governance: GovernanceSettings
 
     def validate(self) -> None:
         self.dataset.validate()
         self.preprocessing.validate()
         self.model.validate()
         self.training.validate()
+        self.governance.validate()
 
 
 def load_experiment_config(path: str | Path) -> ExperimentConfig:
@@ -119,6 +142,7 @@ def load_experiment_config(path: str | Path) -> ExperimentConfig:
         preprocessing=PreprocessingConfig.from_mapping(section("preprocessing")),
         model=ModelSettings.from_mapping(section("model")),
         training=TrainingSettings.from_mapping(section("training")),
+        governance=GovernanceSettings.from_mapping(section("governance")),
     )
     config.validate()
     return config

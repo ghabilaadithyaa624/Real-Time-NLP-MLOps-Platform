@@ -16,6 +16,8 @@ def test_experiment_config_loads_all_phase_four_settings():
     assert config.training.batch_size == 16
     assert config.training.learning_rate == 2.0e-5
     assert config.training.epochs == 3
+    assert config.governance.metric == "f1"
+    assert config.governance.minimum_f1 == 0.90
 
 
 def test_classification_metrics_support_logits_and_macro_scores():
