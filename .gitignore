@@ -20,6 +20,11 @@ mlruns/
 .huggingface/
 .cache/
 
+# Test and coverage artifacts
+.coverage
+coverage.xml
+htmlcov/
+
 # OS/editor files
 .DS_Store
 .vscode/
