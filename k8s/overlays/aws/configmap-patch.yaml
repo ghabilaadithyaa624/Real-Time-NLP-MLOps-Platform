@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: feedback-api-config
+data:
+  MODEL_SOURCE: mlflow
+  MLFLOW_MODEL_URI: models:/customer-feedback-classifier@production
+  MLFLOW_TRACKING_URI: REPLACE_WITH_MLFLOW_TRACKING_URI
+  MODEL_VERSION: production
+  INFERENCE_DEVICE: auto
+  OTEL_TRACES_EXPORTER: otlp
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector.observability.svc.cluster.local:4317
+  OTEL_EXPORTER_OTLP_PROTOCOL: grpc

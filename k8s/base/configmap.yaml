@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: feedback-api-config
+data:
+  MODEL_SOURCE: mlflow
+  MLFLOW_MODEL_URI: models:/customer-feedback-classifier@production
+  MLFLOW_TRACKING_URI: http://mlflow:5000
+  MODEL_VERSION: production
+  MAX_LENGTH: "128"
+  INFERENCE_DEVICE: auto
+  MODEL_WARMUP_TEXT: health check
+  HF_HOME: /tmp/huggingface
+  OTEL_SERVICE_NAME: real-time-nlp-api
+  OTEL_TRACES_EXPORTER: none
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+  OTEL_EXPORTER_OTLP_PROTOCOL: grpc

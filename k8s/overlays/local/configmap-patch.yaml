@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: feedback-api-config
+data:
+  MODEL_SOURCE: local
+  MODEL_PATH: /models/model
+  MODEL_VERSION: local
+  INFERENCE_DEVICE: cpu
+  OTEL_TRACES_EXPORTER: none
