@@ -4,3 +4,8 @@ PyYAML==6.0.2
 
 # Transformer tokenizer/model interfaces.
 transformers==4.48.3
+
+# CPU/CUDA training runtime and evaluation metrics.
+torch==2.5.1
+accelerate==1.2.1
+scikit-learn==1.6.1
