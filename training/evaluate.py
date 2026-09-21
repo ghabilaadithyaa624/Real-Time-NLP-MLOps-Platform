@@ -7,6 +7,7 @@ an explicit threshold result; it does not register or promote a model.
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -148,12 +149,25 @@ def evaluate_checkpoint(
         minimum_f1=threshold,
     )
 
+    training_run_id = None
+    training_summary_path = checkpoint_path / "training_summary.json"
+    if training_summary_path.exists():
+        try:
+            training_summary = json.loads(
+                training_summary_path.read_text(encoding="utf-8")
+            )
+            training_run_id = training_summary.get("mlflow", {}).get("run_id")
+        except (OSError, json.JSONDecodeError, AttributeError):
+            training_run_id = None
+
     result = {
         "git_commit": git_commit(),
+        "training_run_id": training_run_id,
         "model": {
             "checkpoint": str(checkpoint_path),
             "configured_name": config.model.name,
             "configured_revision": config.model.revision,
+            "training_run_id": training_run_id,
             "torch_version": torch.__version__,
             "device": device_summary(),
         },

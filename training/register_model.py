@@ -60,6 +60,7 @@ def register_model_version(
 
     tags = {
         "lifecycle_status": "candidate",
+        "model_type": "transformer-sequence-classification",
         "source_run_id": run_id,
         "git_commit": run.data.tags.get("git_commit", "unknown"),
         "dataset_revision": run.data.tags.get("dataset_revision", "unknown"),
