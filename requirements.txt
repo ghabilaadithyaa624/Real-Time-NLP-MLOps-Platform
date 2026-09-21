@@ -1,0 +1,5 @@
+# Phase 2 data pipeline dependencies.
+# This file will be extended with serving, training, and observability
+# dependencies in their respective implementation phases.
+datasets==3.3.2
+PyYAML==6.0.2
