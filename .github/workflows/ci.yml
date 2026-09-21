@@ -69,6 +69,26 @@ jobs:
           context: .
           file: ./Dockerfile
           push: false
+          load: true
           tags: real-time-nlp-api:ci-${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Scan image for high and critical vulnerabilities
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          image-ref: real-time-nlp-api:ci-${{ github.sha }}
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: HIGH,CRITICAL
+
+      - name: Generate image SBOM
+        uses: anchore/sbom-action@v0.17.0
+        with:
+          image: real-time-nlp-api:ci-${{ github.sha }}
+          format: cyclonedx-json
+          output-file: sbom.cdx.json
+          upload-artifact: true
+          artifact-name: sbom-ci-${{ github.sha }}

@@ -75,6 +75,25 @@ jobs:
           cache-to: type=gha,mode=max
           provenance: true
 
+      - name: Scan pushed image for high and critical vulnerabilities
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          image-ref: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: HIGH,CRITICAL
+
+      - name: Generate release image SBOM
+        uses: anchore/sbom-action@v0.17.0
+        with:
+          image: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+          format: cyclonedx-json
+          output-file: sbom-release.cdx.json
+          upload-artifact: true
+          artifact-name: sbom-release-${{ github.sha }}
+
       - name: Set up kubectl
         uses: azure/setup-kubectl@v4.0.0
         with:

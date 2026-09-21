@@ -15,6 +15,8 @@ Python compilation
 pytest unit and integration suite
   |
 Docker production-image build without push
+  |
+Trivy HIGH/CRITICAL scan and CycloneDX SBOM
 ```
 
 The CI job has read-only repository permissions. It does not receive AWS
@@ -75,7 +77,8 @@ The release job:
 1. authenticates to AWS using GitHub OIDC;
 2. logs in to ECR;
 3. builds and pushes an image tagged with the Git SHA;
-4. configures `kubectl` for EKS;
+4. scans the pushed image and uploads a CycloneDX SBOM;
+5. configures `kubectl` for EKS;
 5. renders the AWS Kustomize overlay;
 6. replaces and verifies all environment placeholders;
 7. performs a server-side dry run;
