@@ -1,0 +1,37 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: real-time-nlp-api:local
+    environment:
+      MODEL_SOURCE: local
+      MODEL_PATH: /models/model
+      MODEL_VERSION: ${MODEL_VERSION:-local}
+      MAX_LENGTH: ${MAX_LENGTH:-128}
+      INFERENCE_DEVICE: ${INFERENCE_DEVICE:-cpu}
+    volumes:
+      # Supply a previously trained Hugging Face checkpoint locally. The
+      # directory is read-only and is never copied into the image.
+      - ${MODEL_PATH:-./artifacts/training}:/models/model:ro
+    ports:
+      - "${API_PORT:-8000}:8000"
+    init: true
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - >-
+          import urllib.request;
+          urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3).read()
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 3
