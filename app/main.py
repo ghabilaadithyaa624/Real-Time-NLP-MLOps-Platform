@@ -19,6 +19,7 @@ from app.observability.tracing import (
     mark_span_error,
     set_safe_span_attributes,
 )
+from app.security.auth import BearerAuthenticationMiddleware
 from app.routes.health import router as health_router
 from app.routes.metrics import router as metrics_router
 from app.routes.model import router as model_router
@@ -102,6 +103,7 @@ def create_app(
     )
     app.state.tracer_provider = configured_tracer_provider
     instrument_fastapi(app, tracer_provider=configured_tracer_provider)
+    app.add_middleware(BearerAuthenticationMiddleware)
     app.add_middleware(RequestIDMiddleware, logger=logger)
     app.add_middleware(SecurityHeadersMiddleware)
     app.include_router(health_router)

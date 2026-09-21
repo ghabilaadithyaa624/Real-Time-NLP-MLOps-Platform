@@ -10,6 +10,7 @@ data:
   MAX_LENGTH: "128"
   INFERENCE_DEVICE: auto
   ENABLE_HSTS: "false"
+  API_AUTH_MODE: disabled
   MODEL_WARMUP_TEXT: health check
   HF_HOME: /tmp/huggingface
   OTEL_SERVICE_NAME: real-time-nlp-api
