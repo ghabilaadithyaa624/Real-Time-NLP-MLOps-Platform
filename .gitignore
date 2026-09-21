@@ -41,6 +41,9 @@ tempo-data/
 !terraform.tfvars.example
 backend.tf
 
+# Load-testing output
+load_test_results/
+
 # OS/editor files
 .DS_Store
 .vscode/
