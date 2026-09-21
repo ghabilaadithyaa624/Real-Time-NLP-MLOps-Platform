@@ -52,6 +52,10 @@ Returns non-secret model state:
 }
 ```
 
+### `GET /metrics`
+
+Prometheus exposition endpoint for bounded-cardinality HTTP, prediction, latency, and model-loading metrics. It is intended for Prometheus scraping rather than browser-facing API clients.
+
 ### `POST /predict`
 
 Request:

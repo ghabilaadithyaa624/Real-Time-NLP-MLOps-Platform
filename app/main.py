@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import logging
+import os
+import time
 import uuid
 from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator
@@ -12,7 +14,13 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.responses import Response
 
 from app.inference.predictor import PredictorNotReady, TransformerPredictor
+from app.monitoring.metrics import (
+    record_http_request,
+    record_model_loading_error,
+    route_template,
+)
 from app.routes.health import router as health_router
+from app.routes.metrics import router as metrics_router
 from app.routes.model import router as model_router
 from app.routes.predict import router as predict_router
 
@@ -29,7 +37,23 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
     ) -> Response:
         request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
         request.state.request_id = request_id
-        response = await call_next(request)
+        started = time.perf_counter()
+        try:
+            response = await call_next(request)
+        except Exception:
+            record_http_request(
+                request.method,
+                route_template(request.scope),
+                500,
+                time.perf_counter() - started,
+            )
+            raise
+        record_http_request(
+            request.method,
+            route_template(request.scope),
+            response.status_code,
+            time.perf_counter() - started,
+        )
         response.headers["X-Request-ID"] = request_id
         return response
 
@@ -52,6 +76,7 @@ def create_app(predictor: Any | None = None) -> FastAPI:
                 # lets Kubernetes replace/retry an unready pod explicitly.
                 app.state.predictor = None
                 app.state.model_load_error = str(exc)
+                record_model_loading_error(os.getenv("MODEL_SOURCE", "mlflow"))
                 logger.error("model load failed: %s", exc)
         yield
 
@@ -65,6 +90,7 @@ def create_app(predictor: Any | None = None) -> FastAPI:
     app.include_router(health_router)
     app.include_router(model_router)
     app.include_router(predict_router)
+    app.include_router(metrics_router)
     return app
 
 
