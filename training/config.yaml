@@ -1,5 +1,4 @@
-# Phase 2 dataset configuration.
-# Model and optimization settings will be added in later phases.
+# Shared dataset, preprocessing, and training configuration.
 dataset:
   name: stanfordnlp/imdb
   config: plain_text
@@ -14,3 +13,18 @@ dataset:
     1: positive
   # null uses the Hugging Face default cache. Set this outside Git when needed.
   cache_dir: null
+
+model:
+  name: distilbert-base-uncased
+  # Pinned model revision for reproducible tokenizer/model downloads.
+  revision: 12040accade4e8a0f71eabdb258fecc2e7e948be
+
+preprocessing:
+  max_length: 128
+  padding: max_length
+  truncation: true
+
+training:
+  batch_size: 16
+  learning_rate: 2.0e-5
+  epochs: 3
