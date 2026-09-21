@@ -1,6 +1,8 @@
-.PHONY: install test coverage api-coverage compile
+.PHONY: install test coverage api-coverage compile lint security ci
 
 PYTHON ?= .venv/bin/python
+RUFF ?= .venv/bin/ruff
+BANDIT ?= .venv/bin/bandit
 
 install:
 	$(PYTHON) -m pip install --disable-pip-version-check --no-input -r requirements-dev.txt
@@ -16,3 +18,11 @@ api-coverage:
 
 compile:
 	$(PYTHON) -m compileall -q app training tests
+
+lint:
+	$(RUFF) check app training tests
+
+security:
+	$(BANDIT) --quiet --recursive app training --severity-level medium
+
+ci: lint security compile test

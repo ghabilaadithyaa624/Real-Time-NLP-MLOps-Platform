@@ -6,7 +6,7 @@ import json
 import logging
 import sys
 from datetime import datetime, timezone
-from typing import Any, Mapping
+from typing import Any
 
 SERVICE_NAME = "real-time-nlp-api"
 _ALLOWED_EXTRA_FIELDS = frozenset(
