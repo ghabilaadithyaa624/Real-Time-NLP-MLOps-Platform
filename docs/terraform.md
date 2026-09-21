@@ -14,6 +14,7 @@ KMS key and encrypted/versioned S3 MLflow artifact bucket
 Private encrypted RDS PostgreSQL MLflow metadata database
 EKS OIDC workload identity role for feedback-api
 RDS security group limited to EKS node security group
+Regional AWS WAF Web ACL with per-IP rate limiting and AWS common managed rules
 ```
 
 The MLflow database is PostgreSQL on RDS. S3 is only for MLflow artifacts and

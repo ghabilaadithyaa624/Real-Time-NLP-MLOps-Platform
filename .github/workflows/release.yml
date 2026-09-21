@@ -29,6 +29,7 @@ jobs:
       MLFLOW_TRACKING_URI: ${{ vars.MLFLOW_TRACKING_URI }}
       IAM_ROLE_ARN: ${{ vars.MODEL_ARTIFACT_IAM_ROLE_ARN }}
       ACM_CERTIFICATE_ARN: ${{ vars.ACM_CERTIFICATE_ARN }}
+      WAF_ACL_ARN: ${{ vars.WAF_ACL_ARN }}
       API_HOSTNAME: ${{ vars.API_HOSTNAME }}
       IMAGE_TAG: ${{ github.sha }}
     steps:
@@ -40,7 +41,7 @@ jobs:
           AWS_DEPLOY_ROLE_ARN: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
         run: |
           set -eu
-          for variable in AWS_REGION ECR_REGISTRY ECR_REPOSITORY EKS_CLUSTER_NAME MLFLOW_TRACKING_URI IAM_ROLE_ARN ACM_CERTIFICATE_ARN API_HOSTNAME AWS_DEPLOY_ROLE_ARN; do
+          for variable in AWS_REGION ECR_REGISTRY ECR_REPOSITORY EKS_CLUSTER_NAME MLFLOW_TRACKING_URI IAM_ROLE_ARN ACM_CERTIFICATE_ARN WAF_ACL_ARN API_HOSTNAME AWS_DEPLOY_ROLE_ARN; do
             if [ -z "${!variable:-}" ]; then
               echo "Missing required production variable: ${variable}" >&2
               exit 1
@@ -98,6 +99,7 @@ jobs:
               "REPLACE_WITH_MLFLOW_TRACKING_URI": os.environ["MLFLOW_TRACKING_URI"],
               "REPLACE_WITH_IAM_ROLE_ARN": os.environ["IAM_ROLE_ARN"],
               "REPLACE_WITH_ACM_CERTIFICATE_ARN": os.environ["ACM_CERTIFICATE_ARN"],
+              "REPLACE_WITH_WAF_ACL_ARN": os.environ["WAF_ACL_ARN"],
               "REPLACE_WITH_API_HOSTNAME": os.environ["API_HOSTNAME"],
           }
           for placeholder, value in replacements.items():

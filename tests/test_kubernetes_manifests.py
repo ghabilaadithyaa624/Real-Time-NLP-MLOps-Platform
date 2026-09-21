@@ -101,6 +101,7 @@ def test_aws_overlay_requires_environment_specific_replacements():
         "REPLACE_WITH_MLFLOW_TRACKING_URI",
         "REPLACE_WITH_IAM_ROLE_ARN",
         "REPLACE_WITH_ACM_CERTIFICATE_ARN",
+        "REPLACE_WITH_WAF_ACL_ARN",
         "REPLACE_WITH_API_HOSTNAME",
     ):
         assert placeholder in serialized

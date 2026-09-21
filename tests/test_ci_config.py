@@ -48,6 +48,7 @@ def test_release_workflow_uses_oidc_and_sha_tagged_images():
     assert "role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}" in release_text
     assert "${{ github.sha }}" in release_text
     assert "REPLACE_WITH_" in release_text
+    assert "WAF_ACL_ARN" in release_text
     assert "kubectl rollout status" in release_text
     assert "kubectl apply --dry-run=server" in release_text
     assert ":latest" not in release_text

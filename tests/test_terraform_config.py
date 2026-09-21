@@ -78,6 +78,24 @@ def test_artifacts_and_database_are_private_and_encrypted():
     assert database["deletion_protection"] is True
 
 
+def test_waf_rate_limiting_and_common_rules_are_configured():
+    waf_resources = {
+        resource_type: blocks
+        for resource in _load(TERRAFORM_ROOT / "waf.tf")["resource"]
+        for resource_type, blocks in resource.items()
+    }
+    waf = waf_resources["aws_wafv2_web_acl"]["api"]
+    assert waf["scope"] == "REGIONAL"
+    assert waf["default_action"][0]["allow"] == [{}]
+    rate_rule = next(rule for rule in waf["rule"] if rule["name"] == "rate-limit-by-ip")
+    rate_statement = rate_rule["statement"][0]["rate_based_statement"][0]
+    assert rate_statement["aggregate_key_type"] == "IP"
+    managed_rule = next(
+        rule for rule in waf["rule"] if rule["name"] == "aws-managed-common-rules"
+    )
+    assert managed_rule["statement"][0]["managed_rule_group_statement"][0]["vendor_name"] == "AWS"
+
+
 def test_ecr_is_immutable_and_terraform_state_is_ignored():
     ecr_resources = {
         resource_type: blocks

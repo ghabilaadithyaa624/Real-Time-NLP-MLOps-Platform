@@ -33,6 +33,11 @@ output "model_artifacts_role_arn" {
   value       = aws_iam_role.model_artifacts.arn
 }
 
+output "api_waf_web_acl_arn" {
+  description = "Regional WAF Web ACL ARN to associate with the API ALB."
+  value       = try(aws_wafv2_web_acl.api[0].arn, null)
+}
+
 output "mlflow_database_endpoint" {
   description = "Private RDS endpoint for the MLflow metadata service."
   value       = aws_db_instance.mlflow.address
