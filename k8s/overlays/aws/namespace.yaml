@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: customer-feedback
+  labels:
+    app.kubernetes.io/part-of: customer-feedback-platform
+    environment: aws

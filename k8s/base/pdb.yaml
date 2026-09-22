@@ -1,0 +1,12 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: feedback-api
+  labels:
+    app.kubernetes.io/name: feedback-api
+    app.kubernetes.io/component: serving
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: feedback-api

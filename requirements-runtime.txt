@@ -1,0 +1,19 @@
+# Runtime-only dependencies for the FastAPI serving image.
+fastapi==0.115.8
+uvicorn[standard]==0.34.0
+mlflow==2.19.0
+psycopg2-binary==2.9.10
+transformers==4.48.3
+torch==2.5.1
+tokenizers==0.21.4
+safetensors==0.8.0
+prometheus-client==0.21.1
+
+# OpenTelemetry distributed tracing.
+opentelemetry-api==1.44.0
+opentelemetry-sdk==1.44.0
+opentelemetry-exporter-otlp-proto-grpc==1.44.0
+opentelemetry-instrumentation-fastapi==0.65b0
+# Keep MLflow's protobuf constraint compatible with OTLP dependencies.
+googleapis-common-protos==1.66.0
+protobuf==5.29.6

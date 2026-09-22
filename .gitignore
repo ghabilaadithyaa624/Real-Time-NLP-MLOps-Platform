@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Environments and secrets
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+
+# Downloaded datasets, model artifacts, and experiment state
+data/
+artifacts/
+mlruns/
+.huggingface/
+.cache/
+
+# Test and coverage artifacts
+.coverage
+coverage.xml
+htmlcov/
+
+# Generated monitoring state
+prometheus-data/
+grafana-data/
+loki-data/
+promtail-data/
+tempo-data/
+postgres-data/
+minio-data/
+
+# Terraform local state and working directories
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+!terraform.tfvars.example
+backend.tf
+
+# Load-testing output
+load_test_results/
+
+# OS/editor files
+.DS_Store
+.vscode/
+.idea/
+*.patch

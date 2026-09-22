@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: feedback-api
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: api
+          volumeMounts:
+            - name: model
+              mountPath: /models/model
+              readOnly: true
+      volumes:
+        - name: model
+          persistentVolumeClaim:
+            claimName: feedback-api-model

@@ -1,0 +1,47 @@
+# Shared dataset, preprocessing, and training configuration.
+dataset:
+  name: stanfordnlp/imdb
+  config: plain_text
+  # Pinned Hugging Face dataset revision for reproducible downloads.
+  revision: e6281661ce1c48d982bc483cf8a173c1bbeb5d31
+  train_split: train
+  test_split: test
+  validation_size: 0.10
+  seed: 42
+  label_names:
+    0: negative
+    1: positive
+  # null uses the Hugging Face default cache. Set this outside Git when needed.
+  cache_dir: null
+
+model:
+  name: distilbert-base-uncased
+  # Pinned model revision for reproducible tokenizer/model downloads.
+  revision: 12040accade4e8a0f71eabdb258fecc2e7e948be
+
+preprocessing:
+  max_length: 128
+  padding: max_length
+  truncation: true
+
+training:
+  batch_size: 16
+  learning_rate: 2.0e-5
+  epochs: 3
+  warmup_ratio: 0.10
+  weight_decay: 0.01
+  output_dir: artifacts/training
+  logging_steps: 25
+  save_total_limit: 2
+  fp16: false
+
+governance:
+  metric: f1
+  minimum_f1: 0.90
+
+mlflow:
+  # Keep local runs opt-in; production enables this through environment config.
+  enabled: false
+  tracking_uri: file:./mlruns
+  experiment_name: customer-feedback-classifier
+  registered_model_name: customer-feedback-classifier
