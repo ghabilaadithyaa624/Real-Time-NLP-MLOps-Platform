@@ -9,6 +9,7 @@ __pycache__/
 # Environments and secrets
 .venv/
 venv/
+env/
 .env
 .env.*
 !.env.example

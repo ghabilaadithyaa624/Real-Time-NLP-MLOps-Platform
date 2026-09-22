@@ -1,0 +1,16 @@
+{
+  "run": [
+    {
+      "method": "fs.rm",
+      "params": {
+        "path": "env"
+      }
+    },
+    {
+      "method": "notify",
+      "params": {
+        "html": "Environment removed. You can now run Install again."
+      }
+    }
+  ]
+}

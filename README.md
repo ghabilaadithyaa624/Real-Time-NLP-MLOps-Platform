@@ -98,7 +98,16 @@ python -m venv .venv
 pip install -r requirements-dev.txt
 ```
 
-### 2. Run the Full Test Suite
+### 2. 1-Click Pinokio Launcher & Gradio Web UI
+This repository includes full native support for **Pinokio AI Browser**:
+- **Pinokio**: Open Pinokio, visit this repo, and click **Install**. Pinokio automatically creates an isolated virtual environment and installs all requirements. Click **Start** to boot the application and open `http://127.0.0.1:7860` inside the Pinokio browser.
+- **Direct CLI**:
+  ```powershell
+  python app.py
+  ```
+  Access the interactive web UI at [http://127.0.0.1:7860](http://127.0.0.1:7860).
+
+### 3. Run the Full Test Suite
 The project comes with 78 unit, integration, security, and configuration tests:
 ```powershell
 pytest -q tests
