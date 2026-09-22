@@ -113,7 +113,7 @@ The project comes with 78 unit, integration, security, and configuration tests:
 pytest -q tests
 ```
 
-### 3. Run the Inference API Locally
+### 4. Run the Inference API Locally
 To start the API in local development mode using a local checkpoint:
 ```powershell
 # Set environment variables
@@ -125,7 +125,7 @@ $env:MODEL_VERSION="v1.0.0-demo"
 uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-### 4. Test API Endpoints
+### 5. Test API Endpoints
 - **Liveness probe**: `GET http://127.0.0.1:8000/health`
 - **Readiness probe**: `GET http://127.0.0.1:8000/health/ready`
 - **Model details**: `GET http://127.0.0.1:8000/model`
